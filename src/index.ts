@@ -2,9 +2,8 @@ import { readFileSync, existsSync, statSync, createReadStream } from "fs";
 import * as http from "http";
 import * as https from "https";
 import * as net from "net";
-import { join, resolve, relative, isAbsolute } from "path";
+import { join, resolve, relative, isAbsolute, extname } from "path";
 import * as tls from "tls";
-import { extname } from "path";
 import { randomUUID } from "crypto";
 import Account from "./account";
 import routes from "./routes";
@@ -17,33 +16,44 @@ const generateRequestHandler = ({
    * `Connection: close`.
    */
   keepAlive?: boolean | undefined;
-}) => (
-  account: Account,
-  req: http.IncomingMessage,
-  res: http.ServerResponse
-) => {
+}) => (account: Account, req: http.IncomingMessage, res: http.ServerResponse) => {
   // Serve static UI under /ui without affecting existing JSON API routes
-  // This preserves original behavior (e.g., GET / returns account metadata)
-  const serveStaticIfUI = () => {
+  const serveStaticIfUI = (): boolean => {
     try {
       if (!req.url || req.method !== "GET") return false;
-      const host = req.headers.host || "localhost";
-      // Use http as base; we only parse path
-      const url = new URL(req.url, `http://${host}`);
-      const pathname = url.pathname;
-      if (pathname === "/ui" || pathname === "/ui/") {
-        return serveFile("index.html");
-      }
-      if (pathname.startsWith("/ui/")) {
-        const relative = pathname.substring("/ui/".length);
-        return serveFile(relative || "index.html");
-      }
-      return false;
+      const { host: reqHost } = (req.headers as any);
+      const host = reqHost || "localhost";
+  const parsedUrl = new URL(req.url, `http://${host}`);
+  const { pathname } = parsedUrl;
 
-      function serveFile(relativePath: string) {
-        const publicDir = resolve(__dirname, "..", "public");
+      const publicDir = resolve(__dirname, "..", "public");
+
+      const contentTypeFor = (fp: string): string => {
+        switch (extname(fp)) {
+          case ".html":
+            return "text/html; charset=utf-8";
+          case ".js":
+            return "text/javascript; charset=utf-8";
+          case ".css":
+            return "text/css; charset=utf-8";
+          case ".svg":
+            return "image/svg+xml";
+          case ".png":
+            return "image/png";
+          case ".jpg":
+          case ".jpeg":
+            return "image/jpeg";
+          case ".ico":
+            return "image/x-icon";
+          case ".json":
+            return "application/json; charset=utf-8";
+          default:
+            return "application/octet-stream";
+        }
+      };
+
+      const serveFile = (relativePath: string): boolean => {
         const filePath = resolve(publicDir, relativePath);
-        // Prevent directory traversal by ensuring resolved path stays within publicDir
         const diff = relative(publicDir, filePath);
         if (diff.startsWith("..") || isAbsolute(diff)) {
           res.statusCode = 403;
@@ -70,58 +80,40 @@ const generateRequestHandler = ({
         res.setHeader("expires", "0");
         createReadStream(target).pipe(res);
         return true;
-      }
+      };
 
-      function contentTypeFor(path: string) {
-        switch (extname(path)) {
-          case ".html":
-            return "text/html; charset=utf-8";
-          case ".js":
-            return "text/javascript; charset=utf-8";
-          case ".css":
-            return "text/css; charset=utf-8";
-          case ".svg":
-            return "image/svg+xml";
-          case ".png":
-            return "image/png";
-          case ".jpg":
-          case ".jpeg":
-            return "image/jpeg";
-          case ".ico":
-            return "image/x-icon";
-          case ".json":
-            return "application/json; charset=utf-8";
-          default:
-            return "application/octet-stream";
-        }
+      if (pathname === "/ui" || pathname === "/ui/") {
+        return serveFile("index.html");
       }
+      if (pathname.startsWith("/ui/")) {
+        const relPath = pathname.substring("/ui/".length);
+        return serveFile(relPath || "index.html");
+      }
+      return false;
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(e);
-      // Fall through to normal routing on error
       return false;
     }
   };
 
-  if (serveStaticIfUI()) {
-    return; // static file served
-  }
+  if (serveStaticIfUI()) return; // static file served
 
   const route = routes(req);
 
   (async () => {
-    let body;
+    let body: any;
     if (route) {
-      const [params, handler] = route;
+      const [params, handler] = route as any;
       try {
-        body = await handler(account, req, res, params);
-      } catch (err) {
+        body = await (handler as any)(account, req, res, params);
+      } catch (err: any) {
         // eslint-disable-next-line no-console
         console.error(err);
         body = { message: err.message };
         res.statusCode = 500;
       }
-      if (res.statusCode > 399 && !body.message) {
+      if (res.statusCode > 399 && body && !body.message) {
         body.message = "";
       }
     } else {
@@ -129,18 +121,18 @@ const generateRequestHandler = ({
       body = { message: "no route" };
     }
 
-    if (body && body._etag) {
-      res.setHeader("etag", body._etag);
+    if (body && (body as any)._etag) {
+      res.setHeader("etag", (body as any)._etag);
     }
 
-  res.setHeader("content-type", "application/json");
-  const isHttps = (req.socket as any)?.encrypted === true;
-  const scheme = isHttps ? "https" : "http";
-  res.setHeader("content-location", `${scheme}://${req.headers.host}${req.url}`);
+    res.setHeader("content-type", "application/json");
+    const isHttps = (req.socket as any) && (req.socket as any).encrypted === true;
+    const scheme = isHttps ? "https" : "http";
+    res.setHeader("content-location", `${scheme}://${req.headers.host}${req.url}`);
     res.setHeader("connection", keepAlive ? "keep-alive" : "close");
     res.setHeader("x-ms-activity-id", randomUUID());
     res.setHeader("x-ms-request-charge", "1");
-    if (req.headers["x-ms-documentdb-populatequerymetrics"]) {
+    if ((req.headers as any)["x-ms-documentdb-populatequerymetrics"]) {
       res.setHeader(
         "x-ms-documentdb-query-metrics",
         "totalExecutionTimeInMs=0.00;queryCompileTimeInMs=0.00;queryLogicalPlanBuildTimeInMs=0.00;queryPhysicalPlanBuildTimeInMs=0.00;queryOptimizationTimeInMs=0.00;VMExecutionTimeInMs=0.00;indexLookupTimeInMs=0.00;documentLoadTimeInMs=0.00;systemFunctionExecuteTimeInMs=0.00;userFunctionExecuteTimeInMs=0.00;retrievedDocumentCount=0;retrievedDocumentSize=0;outputDocumentCount=1;outputDocumentSize=0;writeOutputTimeInMs=0.00;indexUtilizationRatio=0.00"
@@ -154,7 +146,7 @@ const generateRequestHandler = ({
       res.setHeader("etag", "1");
     }
     res.end(JSON.stringify(body));
-  })().catch(err => {
+  })().catch((err: any) => {
     // eslint-disable-next-line no-console
     console.error(err);
     if (!res.finished) {
@@ -168,10 +160,8 @@ const createAccount = (address: string | net.AddressInfo) => {
   if (!address || typeof address !== "object") {
     throw new Error(`Unexpected address type: ${address}`);
   }
-
   const { address: host, port } = address as net.AddressInfo;
   const hostname = host === "0.0.0.0" || host === "::" ? "localhost" : host;
-
   return new Account(hostname, port);
 };
 
@@ -183,7 +173,7 @@ export function createHttpServer(opts: http.ServerOptions = {}) {
   });
   const server = http
     .createServer(opts, (req: http.IncomingMessage, res: http.ServerResponse) => {
-      handleRequest(account, req, res);
+      handleRequest(account as any, req, res);
     })
     .on("listening", () => {
       account = createAccount(server.address());
@@ -209,7 +199,7 @@ export function createHttpsServer(opts?: https.ServerOptions) {
   });
   const server = https
     .createServer(options, (req: http.IncomingMessage, res: http.ServerResponse) => {
-      handleRequest(account, req, res);
+      handleRequest(account as any, req, res);
     })
     .on("listening", () => {
       account = createAccount(server.address());

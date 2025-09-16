@@ -3,6 +3,32 @@ import * as net from "net";
 import { spawn } from "child_process";
 import { createHttpServer, createHttpsServer } from ".";
 
+function tryOpen(url: string) {
+  const safeSpawn = (cmd: string, spawnArgs: string[]) => {
+    try {
+      const child = spawn(cmd, spawnArgs, { detached: true, stdio: "ignore" });
+      child.unref();
+      return true;
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn(`Could not auto-open browser (${cmd}): ${String(e)}`);
+      return false;
+    }
+  };
+
+  // macOS default path
+  if (process.platform === "darwin" && safeSpawn("open", [url])) return;
+
+  // Linux common fallback
+  if (process.platform === "linux" && safeSpawn("xdg-open", [url])) return;
+
+  // Windows (best-effort)
+  if (process.platform === "win32" && safeSpawn("cmd", ["/c", "start", "", url])) return;
+
+  // eslint-disable-next-line no-console
+  console.log(`Open UI at: ${url}`);
+}
+
 const argv = process.argv.slice(2);
 const args: {
   help?: boolean;
@@ -75,28 +101,4 @@ const server = cosmosDBServer().listen(args.port, args.hostname, () => {
   }
 });
 
-function tryOpen(url: string) {
-  const safeSpawn = (cmd: string, args: string[]) => {
-    try {
-      const child = spawn(cmd, args, { detached: true, stdio: "ignore" });
-      child.unref();
-      return true;
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.warn(`Could not auto-open browser (${cmd}): ${String(e)}`);
-      return false;
-    }
-  };
-
-  // macOS default path
-  if (process.platform === "darwin" && safeSpawn("open", [url])) return;
-
-  // Linux common fallback
-  if (process.platform === "linux" && safeSpawn("xdg-open", [url])) return;
-
-  // Windows (best-effort)
-  if (process.platform === "win32" && safeSpawn("cmd", ["/c", "start", "", url])) return;
-
-  // eslint-disable-next-line no-console
-  console.log(`Open UI at: ${url}`);
-}
+// moved above to avoid no-use-before-define and keep single implementation

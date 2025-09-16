@@ -19,6 +19,17 @@
 			"args": [],
 			"isBackground": true,
 			"group": "none"
+		},
+		{
+			"label": "rebuild-after-fix",
+			"type": "shell",
+			"command": "npm run build",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
 		}
 	]
 }
