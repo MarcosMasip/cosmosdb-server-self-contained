@@ -62,6 +62,7 @@ npm run build
 ```
 What this does: compiles TypeScript to `lib/` for the CLI and server runtime.
 Expected output: a `lib/` directory with compiled `.js` files.
+Tip: `npm start` runs `prestart` automatically, so you can skip this step and just run step 3.
 
 3) Start the server and open the UI (HTTP)
 ```sh
@@ -144,6 +145,12 @@ Available factories (unchanged):
 const { createHttpServer, createHttpsServer } = require("@vercel/cosmosdb-server");
 ```
 
+Note on imports when using this repo locally:
+- If you're consuming this fork directly from a clone (not from npm), replace the package name with a relative path to the compiled output, for example:
+  - `const { createHttpServer } = require("./lib");`
+  - or `const createHttpsServer = require("./lib").default;`
+
+
 ## OS support (macOS/Windows/Linux)
 
 This project is tested on macOS, Windows, and Linux with Node 20+. A few platform-specific notes:
@@ -191,6 +198,9 @@ Options:
 - `--no-ssl`             Use HTTP instead of HTTPS
 - `--open`               Open the UI in your default browser at `/ui`
 
+Notes:
+- If you omit `-p/--port`, the server binds to a random available port chosen by the OS. The actual port will be printed in the console.
+
 NPM scripts (single-terminal convenience):
 - `npm start`             → HTTP on port 3000, opens `/ui`
 - `npm run start:https`   → HTTPS on port 3000, opens `/ui` (expect self-signed cert warning)
@@ -200,6 +210,18 @@ Tip: You can pass CLI flags through npm by adding them after `--`. For example, 
 npm start -- -p 4000       # HTTP on port 4000
 npm run start:https -- -p 4443   # HTTPS on port 4443
 ```
+
+Headers quick reference (manual calls):
+- Partition key for item reads/writes on partitioned containers: set `x-ms-documentdb-partitionkey` to a JSON-encoded array, for example: `["myPk"]`.
+- SQL queries: set `x-ms-documentdb-isquery: True` and send `{ "query": "SELECT * FROM c" }` as the JSON body.
+  - Alternatively, set `content-type: application/query+json` (header not required in that case).
+- Cross-partition queries (when your query doesn’t include partition keys): add `x-ms-documentdb-query-enablecrosspartition: True`.
+- Common content type: `content-type: application/json`.
+ - Upsert a document with POST: add `x-ms-documentdb-is-upsert: True`.
+ - Batch (SDK-style) requests: add `x-ms-cosmos-is-batch-request: True` to POST on the docs resource.
+ - Pagination: limit with `x-ms-max-item-count: <int>`. When more results exist, responses include `x-ms-continuation` (a JSON token). Send that same header back to fetch the next page.
+ - Optimistic concurrency: use `If-Match: "<etag>"` on write/delete to require a specific version.
+ - Query metrics (optional): set `x-ms-documentdb-populatequerymetrics: True` to receive an `x-ms-documentdb-query-metrics` header.
 
  
 
