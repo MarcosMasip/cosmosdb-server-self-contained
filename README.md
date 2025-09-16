@@ -144,7 +144,6 @@ const { createHttpServer, createHttpsServer } = require("@vercel/cosmosdb-server
 
 ## Supported operations and limitations
 
-- Database operations
 - Container operations
 - Item (document) operations
 - User-defined function operations
@@ -178,20 +177,7 @@ npm start -- -p 4000       # HTTP on port 4000
 npm run start:https -- -p 4443   # HTTPS on port 4443
 ```
 
-## Development & tests
-
-Common tasks:
-```sh
-npm run build       # compile TypeScript to lib/
-npm test            # run unit tests (if present)
-npm run lint        # eslint
-npm run format      # prettier
-```
-
-Azure SDK integration tests (optional, heavy):
-- This repo contains scripts under `test/` that build the Azure SDK (monorepo) and run their integration tests against this server to ensure compatibility.
-- Running `npm run test` may execute both Jest tests and the SDK script, which uses a git submodule (`test/azure-sdk-for-js`) and `@microsoft/rush`.
-- If you haven’t initialized submodules or installed Rush, the SDK test script will take time and bandwidth and may require extra setup. See `test/sdk.sh` for exact steps.
+ 
 
 ## Troubleshooting
 

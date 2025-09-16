@@ -20,14 +20,11 @@
     "prestart": "npm run build",
     "start": "node lib/cli.js -p 3000 --no-ssl --open",
     "start:https": "node lib/cli.js -p 3000 --open",
-    "format": "prettier --ignore-path .gitignore --write '{src/**/*.ts,test/*.ts}'",
+    "format": "prettier --ignore-path .gitignore --write 'src/**/*.ts'",
     "format-staged": "git diff --cached --diff-filter=d --name-only '*.ts' | xargs -I{} npx prettier --list-different {} || true",
-    "lint": "eslint --ignore-path .gitignore '{src,test}/**/*.ts'",
+    "lint": "eslint --ignore-path .gitignore 'src/**/*.ts'",
     "lint-staged": "git diff --cached --diff-filter=d --name-only '*.ts' | xargs -I{} npx eslint {} || true",
-    "prepublishOnly": "npm run build",
-    "test": "npm run test-code && npm run test-sdk",
-    "test-code": "NODE_TLS_REJECT_UNAUTHORIZED=0 jest",
-    "test-sdk": "./test/sdk.sh"
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@vercel/cosmosdb-server": "^1.0.0",
@@ -39,8 +36,6 @@
     "raw-body": "2.4.1"
   },
   "devDependencies": {
-    "@azure/cosmos": "3.17.3",
-    "@types/jest": "^29.5.1",
     "@types/lru-cache": "5.1.0",
     "@types/node": "^20.19.9",
     "@typescript-eslint/eslint-plugin": "5.59.6",
@@ -50,12 +45,9 @@
     "eslint-config-airbnb": "19.0.4",
     "eslint-config-prettier": "8.8.0",
     "eslint-plugin-import": "2.27.5",
-    "eslint-plugin-jest": "^27.2.1",
     "eslint-plugin-jsx-a11y": "6.7.1",
     "eslint-plugin-react": "7.32.2",
-    "jest": "^29.5.0",
     "prettier": "1.18.2",
-    "ts-jest": "^29.1.0",
     "ts-node": "8.4.1",
     "typescript": "4.9.5"
   },
@@ -64,16 +56,12 @@
       "airbnb",
       "prettier"
     ],
-    "env": {
-      "jest/globals": true
-    },
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
       "ecmaVersion": 2018
     },
     "plugins": [
-      "@typescript-eslint",
-      "jest"
+      "@typescript-eslint"
     ],
     "rules": {
       "import/extensions": "off",

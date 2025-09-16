@@ -1,3 +1,1 @@
-[submodule "test/azure-sdk-for-js"]
-	path = test/azure-sdk-for-js
-	url = https://github.com/Azure/azure-sdk-for-js.git
+ 

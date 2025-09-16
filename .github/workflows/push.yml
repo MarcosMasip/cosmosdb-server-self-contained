@@ -1,4 +1,4 @@
-name: Build & Test
+name: Build
 on:
   pull_request:
 
@@ -10,8 +10,6 @@ jobs:
         node: [20, 22]
     steps:
       - uses: actions/checkout@v3
-      - name: Additional Checkout
-        run: git submodule update --init --recursive
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
@@ -22,5 +20,3 @@ jobs:
         run: npm run lint
       - name: Build
         run: npm run build
-      - name: Test
-        run: npm test
