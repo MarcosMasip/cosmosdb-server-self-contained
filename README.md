@@ -13,11 +13,12 @@ Table of contents
 - HTTPS mode (optional)
 - Using the UI
 - Using the original API (unchanged)
+- Architecture
 - Supported operations and limitations
 - CLI reference
-- Development & tests
 - Troubleshooting
 - License & acknowledgements
+- Developing
 
 ## What is this and why fork it?
 
@@ -35,7 +36,7 @@ This fork (full‑stack and self‑contained): cosmosdb-server-self-contained
   - The root path `/` still returns the original account metadata JSON.
   - The CLI usage is compatible; you can still run `node lib/cli.js` with the original flags.
 
-Why this was done: to simplify onboarding and demos. New users can clone, install, and be exploring data in a browser within seconds—no extra tools, no multiple terminals, and no external dependencies. Meanwhile, existing SDK integration tests and code that talks to the HTTP API continue to work exactly as before.
+Why this was done: to simplify onboarding and demos. New users can clone, install, and be exploring data in a browser within seconds—no extra tools, no multiple terminals, and no external dependencies. Meanwhile, apps and SDK clients that talk to the HTTP API continue to work exactly as before.
 
 ## Prerequisites
 
@@ -142,10 +143,21 @@ Available factories (unchanged):
 const { createHttpServer, createHttpsServer } = require("@vercel/cosmosdb-server");
 ```
 
+## Architecture
+
+- HTTP/HTTPS servers: `src/index.ts` exports `createHttpServer` and `createHttpsServer`, wiring request handling and standard Cosmos‑style headers (e.g., `x-ms-activity-id`, `x-ms-request-charge`, `etag`).
+- Router and routes: `src/router.ts` and `src/routes.ts` map HTTP method + path to a specific handler.
+- Handlers: `src/handler/*` implement each API operation (create/read/replace/delete/upsert for databases, containers, items; queries; patch; UDFs) and translate to proper status codes and shapes.
+- In‑memory model: `src/account/*` holds the account state (databases, containers, items, partition key ranges, resource IDs, etags), reset on process restart.
+- Static UI: files in `public/` are served only under `/ui` so API routes remain untouched. Unknown `/ui/*` paths fall back to `index.html`.
+- CLI: `src/cli.ts` parses flags (`-p/--port`, `--host`, `--no-ssl`, `--open`) and prints connection info; `--open` launches your default browser to `/ui`.
+
 ## Supported operations and limitations
 
+- Database operations
 - Container operations
 - Item (document) operations
+- Patch operations (set/replace/remove/add/incr/move with optional condition)
 - User-defined function operations
 - SQL queries (most). Spatial notes:
   - `ST_ISVALID` and `ST_ISVALIDDETAILED` are not supported.
