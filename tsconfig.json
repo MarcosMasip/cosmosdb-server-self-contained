@@ -5,7 +5,11 @@
     "module": "CommonJS",
     "noImplicitAny": true,
     "outDir": "lib",
-    "target": "es2019"
+    "target": "es2019",
+  "lib": ["es2020", "dom"],
+    "types": ["node"],
+    "moduleResolution": "node",
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*.ts"

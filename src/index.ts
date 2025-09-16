@@ -179,7 +179,7 @@ export function createHttpServer(opts: http.ServerOptions = {}) {
     keepAlive: opts.keepAlive
   });
   const server = http
-    .createServer(opts, (req, res) => {
+    .createServer(opts, (req: http.IncomingMessage, res: http.ServerResponse) => {
       handleRequest(account, req, res);
     })
     .on("listening", () => {
@@ -205,7 +205,7 @@ export function createHttpsServer(opts?: https.ServerOptions) {
     keepAlive: options.keepAlive
   });
   const server = https
-    .createServer(options, (req, res) => {
+    .createServer(options, (req: http.IncomingMessage, res: http.ServerResponse) => {
       handleRequest(account, req, res);
     })
     .on("listening", () => {
