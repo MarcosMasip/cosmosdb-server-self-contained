@@ -1,5 +1,4 @@
 import * as http from "http";
-import { parse } from "url";
 import pathMatch from "./path-match";
 import trueHeader from "./true-header";
 
@@ -13,7 +12,9 @@ export default (rules: { [x: string]: { [y: string]: Function } }) => {
   });
 
   return (req: http.IncomingMessage) => {
-    let { pathname } = parse(req.url);
+    const host = req.headers.host || "localhost";
+    const parsed = new URL(req.url || "/", `http://${host}`);
+    let { pathname } = parsed;
 
     // fix @azure/cosmos sends double slash url
     if (pathname && pathname.slice(0, 2) === "//") {
