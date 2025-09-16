@@ -1,9 +1,10 @@
-import { readFileSync } from "fs";
+import { readFileSync, existsSync, statSync, createReadStream } from "fs";
 import * as http from "http";
 import * as https from "https";
 import * as net from "net";
 import { join } from "path";
 import * as tls from "tls";
+import { extname } from "path";
 import { randomUUID } from "crypto";
 import Account from "./account";
 import routes from "./routes";
@@ -21,6 +22,90 @@ const generateRequestHandler = ({
   req: http.IncomingMessage,
   res: http.ServerResponse
 ) => {
+  // Serve static UI under /ui without affecting existing JSON API routes
+  // This preserves original behavior (e.g., GET / returns account metadata)
+  const serveStaticIfUI = () => {
+    try {
+      if (!req.url || req.method !== "GET") return false;
+      const host = req.headers.host || "localhost";
+      // Use http as base; we only parse path
+      const url = new URL(req.url, `http://${host}`);
+      const pathname = url.pathname;
+      if (pathname === "/ui" || pathname === "/ui/") {
+        return serveFile("index.html");
+      }
+      if (pathname.startsWith("/ui/")) {
+        const relative = pathname.substring("/ui/".length);
+        return serveFile(relative || "index.html");
+      }
+      return false;
+
+      function serveFile(relativePath: string) {
+        const publicDir = join(__dirname, "..", "public");
+        const filePath = join(publicDir, relativePath);
+        // Prevent directory traversal by ensuring path is inside publicDir
+        if (!filePath.startsWith(publicDir)) {
+          res.statusCode = 403;
+          res.end("Forbidden");
+          return true;
+        }
+        let target = filePath;
+        if (!existsSync(target)) {
+          // Fallback to index.html for unknown paths under /ui (simple SPA routing)
+          target = join(publicDir, "index.html");
+        } else if (statSync(target).isDirectory()) {
+          target = join(target, "index.html");
+        }
+        if (!existsSync(target)) {
+          res.statusCode = 404;
+          res.end("Not Found");
+          return true;
+        }
+        const type = contentTypeFor(target);
+        res.statusCode = 200;
+        res.setHeader("content-type", type);
+        res.setHeader("cache-control", "no-cache, no-store, must-revalidate");
+        res.setHeader("pragma", "no-cache");
+        res.setHeader("expires", "0");
+        createReadStream(target).pipe(res);
+        return true;
+      }
+
+      function contentTypeFor(path: string) {
+        switch (extname(path)) {
+          case ".html":
+            return "text/html; charset=utf-8";
+          case ".js":
+            return "text/javascript; charset=utf-8";
+          case ".css":
+            return "text/css; charset=utf-8";
+          case ".svg":
+            return "image/svg+xml";
+          case ".png":
+            return "image/png";
+          case ".jpg":
+          case ".jpeg":
+            return "image/jpeg";
+          case ".ico":
+            return "image/x-icon";
+          case ".json":
+            return "application/json; charset=utf-8";
+          default:
+            return "application/octet-stream";
+        }
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+      // Fall through to normal routing on error
+      return false;
+    }
+  };
+
+  if (serveStaticIfUI()) {
+    return; // static file served
+  }
+
   const route = routes(req);
 
   (async () => {

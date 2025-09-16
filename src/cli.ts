@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import * as net from "net";
+import { spawn } from "child_process";
 import { createHttpServer, createHttpsServer } from ".";
 
 const argv = process.argv.slice(2);
@@ -8,6 +9,7 @@ const args: {
   port?: number;
   hostname?: string;
   nossl?: boolean;
+  open?: boolean;
 } = {};
 while (argv.length) {
   const key = argv.shift();
@@ -26,6 +28,9 @@ while (argv.length) {
     case "--no-ssl":
       args.nossl = true;
       break;
+    case "--open":
+      args.open = true;
+      break;
     default:
       break;
   }
@@ -42,6 +47,7 @@ Options:
   -p, --port
   --no-ssl
   --host
+  --open
 `);
   process.exit();
 }
@@ -61,4 +67,36 @@ const server = cosmosDBServer().listen(args.port, args.hostname, () => {
       args.nossl ? "" : "S"
     } connections at ${hostname}:${port}`
   );
+
+  if (args.open) {
+    const scheme = args.nossl ? "http" : "https";
+    const url = `${scheme}://${hostname}:${port}/ui`;
+    tryOpen(url);
+  }
 });
+
+function tryOpen(url: string) {
+  // macOS default path
+  if (process.platform === "darwin") {
+    const child = spawn("open", [url], { detached: true, stdio: "ignore" });
+    child.unref();
+    return;
+  }
+  // Linux common fallback
+  if (process.platform === "linux") {
+    const child = spawn("xdg-open", [url], { detached: true, stdio: "ignore" });
+    child.unref();
+    return;
+  }
+  // Windows (best-effort)
+  if (process.platform === "win32") {
+    const child = spawn("cmd", ["/c", "start", "", url], {
+      detached: true,
+      stdio: "ignore"
+    });
+    child.unref();
+    return;
+  }
+  // eslint-disable-next-line no-console
+  console.log(`Open UI at: ${url}`);
+}

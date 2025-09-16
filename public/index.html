@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cosmos DB Local - UI</title>
+    <link rel="icon" href="/ui/favicon.ico" />
+    <link rel="stylesheet" href="/ui/styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Cosmos DB Local</h1>
+      <nav>
+        <a href="/ui/">Home</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="controls">
+        <div class="panel">
+          <h2>Create Database</h2>
+          <input id="db-id" placeholder="Database id" />
+          <button id="create-db">Create</button>
+        </div>
+        <div class="panel">
+          <h2>Create Container</h2>
+          <input id="container-db-id" placeholder="Database id" />
+          <input id="container-id" placeholder="Container id" />
+          <input id="partition-key" placeholder="Partition key path (e.g. /pk)" />
+          <button id="create-container">Create</button>
+        </div>
+        <div class="panel">
+          <h2>Create Document</h2>
+          <input id="doc-db-id" placeholder="Database id" />
+          <input id="doc-container-id" placeholder="Container id" />
+          <textarea id="doc-json" placeholder='{"id": "1", "pk": "A", "name": "Item"}'></textarea>
+          <button id="create-doc">Create</button>
+        </div>
+      </section>
+
+      <section class="list">
+        <div class="panel">
+          <h2>Databases</h2>
+          <button id="refresh-dbs">Refresh</button>
+          <ul id="db-list"></ul>
+        </div>
+        <div class="panel">
+          <h2>Containers</h2>
+          <input id="list-containers-db" placeholder="Database id" />
+          <button id="refresh-containers">Refresh</button>
+          <ul id="container-list"></ul>
+        </div>
+        <div class="panel">
+          <h2>Documents</h2>
+          <input id="list-docs-db" placeholder="Database id" />
+          <input id="list-docs-container" placeholder="Container id" />
+          <button id="refresh-docs">Refresh</button>
+          <ul id="doc-list"></ul>
+        </div>
+      </section>
+
+      <section class="query">
+        <div class="panel">
+          <h2>Query Documents</h2>
+          <input id="q-db" placeholder="Database id" />
+          <input id="q-container" placeholder="Container id" />
+          <textarea id="q-text" placeholder="SELECT * FROM c"></textarea>
+          <label>
+            <input type="checkbox" id="q-cross" /> Enable cross-partition
+          </label>
+          <button id="run-query">Run</button>
+          <pre id="q-result"></pre>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <small>Local-only UI. Data is in-memory until server restarts.</small>
+    </footer>
+
+    <script src="/ui/main.js"></script>
+  </body>
+</html>

@@ -9,23 +9,27 @@
   "files": [
     "cert.pem",
     "key.pem",
-    "lib"
+    "lib",
+    "public"
   ],
   "bin": {
     "cosmosdb-server": "lib/cli.js"
   },
   "scripts": {
     "build": "tsc",
+    "start": "node lib/cli.js -p 3000 --no-ssl --open",
+    "start:https": "node lib/cli.js -p 3000 --open",
     "format": "prettier --ignore-path .gitignore --write '{src/**/*.ts,test/*.ts}'",
-    "format-staged": "git diff --cached --diff-filter=d --name-only '*.ts' | xargs prettier --list-different",
+    "format-staged": "git diff --cached --diff-filter=d --name-only '*.ts' | xargs -I{} npx prettier --list-different {} || true",
     "lint": "eslint --ignore-path .gitignore '{src,test}/**/*.ts'",
-    "lint-staged": "git diff --cached --diff-filter=d --name-only '*.ts' | xargs eslint",
+    "lint-staged": "git diff --cached --diff-filter=d --name-only '*.ts' | xargs -I{} npx eslint {} || true",
     "prepublishOnly": "yarn build",
     "test": "yarn test-code && yarn test-sdk",
     "test-code": "NODE_TLS_REJECT_UNAUTHORIZED=0 jest",
     "test-sdk": "./test/sdk.sh"
   },
   "dependencies": {
+    "@vercel/cosmosdb-server": "^1.0.0",
     "@zeit/cosmosdb-query": "0.7.2",
     "big-integer": "1.6.46",
     "int64-buffer": "0.99.1007",
