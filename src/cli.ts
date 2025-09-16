@@ -76,27 +76,27 @@ const server = cosmosDBServer().listen(args.port, args.hostname, () => {
 });
 
 function tryOpen(url: string) {
+  const safeSpawn = (cmd: string, args: string[]) => {
+    try {
+      const child = spawn(cmd, args, { detached: true, stdio: "ignore" });
+      child.unref();
+      return true;
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn(`Could not auto-open browser (${cmd}): ${String(e)}`);
+      return false;
+    }
+  };
+
   // macOS default path
-  if (process.platform === "darwin") {
-    const child = spawn("open", [url], { detached: true, stdio: "ignore" });
-    child.unref();
-    return;
-  }
+  if (process.platform === "darwin" && safeSpawn("open", [url])) return;
+
   // Linux common fallback
-  if (process.platform === "linux") {
-    const child = spawn("xdg-open", [url], { detached: true, stdio: "ignore" });
-    child.unref();
-    return;
-  }
+  if (process.platform === "linux" && safeSpawn("xdg-open", [url])) return;
+
   // Windows (best-effort)
-  if (process.platform === "win32") {
-    const child = spawn("cmd", ["/c", "start", "", url], {
-      detached: true,
-      stdio: "ignore"
-    });
-    child.unref();
-    return;
-  }
+  if (process.platform === "win32" && safeSpawn("cmd", ["/c", "start", "", url])) return;
+
   // eslint-disable-next-line no-console
   console.log(`Open UI at: ${url}`);
 }

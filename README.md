@@ -13,6 +13,7 @@ Table of contents
 - HTTPS mode (optional)
 - Using the UI
 - Using the original API (unchanged)
+- OS support (macOS/Windows/Linux)
 - Architecture
 - Supported operations and limitations
 - CLI reference
@@ -142,6 +143,17 @@ Available factories (unchanged):
 ```js
 const { createHttpServer, createHttpsServer } = require("@vercel/cosmosdb-server");
 ```
+
+## OS support (macOS/Windows/Linux)
+
+This project is tested on macOS, Windows, and Linux with Node 20+. A few platform-specific notes:
+
+- Browser auto-open: `npm start` tries to open `/ui` using `open` (macOS), `xdg-open` (Linux), or `start` (Windows). If that fails (missing utility, remote VM, etc.), the process continues—just open the URL printed in the console.
+- HTTPS certificate: the included `cert.pem`/`key.pem` are self‑signed for local development only. Browsers will warn on all OSes. For scripts/SDKs, either use HTTP (`--no-ssl`) or configure your client to allow self‑signed certificates.
+- Paths and static files: the UI is served from `/ui` with OS‑agnostic path handling; unknown subpaths fall back to `/ui/index.html`.
+- IPv6/IPv4 addresses: the CLI displays the bound address accurately (IPv6 wrapped in brackets). It also normalizes `0.0.0.0`/`::` to `localhost` for the internal account metadata.
+
+If you hit any platform-specific issues, please open an issue with OS version, Node version, and repro steps.
 
 ## Architecture
 

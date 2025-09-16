@@ -2,7 +2,7 @@ import { readFileSync, existsSync, statSync, createReadStream } from "fs";
 import * as http from "http";
 import * as https from "https";
 import * as net from "net";
-import { join } from "path";
+import { join, resolve, relative, isAbsolute } from "path";
 import * as tls from "tls";
 import { extname } from "path";
 import { randomUUID } from "crypto";
@@ -41,10 +41,11 @@ const generateRequestHandler = ({
       return false;
 
       function serveFile(relativePath: string) {
-        const publicDir = join(__dirname, "..", "public");
-        const filePath = join(publicDir, relativePath);
-        // Prevent directory traversal by ensuring path is inside publicDir
-        if (!filePath.startsWith(publicDir)) {
+        const publicDir = resolve(__dirname, "..", "public");
+        const filePath = resolve(publicDir, relativePath);
+        // Prevent directory traversal by ensuring resolved path stays within publicDir
+        const diff = relative(publicDir, filePath);
+        if (diff.startsWith("..") || isAbsolute(diff)) {
           res.statusCode = 403;
           res.end("Forbidden");
           return true;
@@ -132,8 +133,10 @@ const generateRequestHandler = ({
       res.setHeader("etag", body._etag);
     }
 
-    res.setHeader("content-type", "application/json");
-    res.setHeader("content-location", `https://${req.headers.host}${req.url}`);
+  res.setHeader("content-type", "application/json");
+  const isHttps = (req.socket as any)?.encrypted === true;
+  const scheme = isHttps ? "https" : "http";
+  res.setHeader("content-location", `${scheme}://${req.headers.host}${req.url}`);
     res.setHeader("connection", keepAlive ? "keep-alive" : "close");
     res.setHeader("x-ms-activity-id", randomUUID());
     res.setHeader("x-ms-request-charge", "1");
