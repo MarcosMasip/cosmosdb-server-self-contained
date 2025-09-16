@@ -17,14 +17,15 @@
   },
   "scripts": {
     "build": "tsc",
+    "prestart": "npm run build",
     "start": "node lib/cli.js -p 3000 --no-ssl --open",
     "start:https": "node lib/cli.js -p 3000 --open",
     "format": "prettier --ignore-path .gitignore --write '{src/**/*.ts,test/*.ts}'",
     "format-staged": "git diff --cached --diff-filter=d --name-only '*.ts' | xargs -I{} npx prettier --list-different {} || true",
     "lint": "eslint --ignore-path .gitignore '{src,test}/**/*.ts'",
     "lint-staged": "git diff --cached --diff-filter=d --name-only '*.ts' | xargs -I{} npx eslint {} || true",
-    "prepublishOnly": "yarn build",
-    "test": "yarn test-code && yarn test-sdk",
+    "prepublishOnly": "npm run build",
+    "test": "npm run test-code && npm run test-sdk",
     "test-code": "NODE_TLS_REJECT_UNAUTHORIZED=0 jest",
     "test-sdk": "./test/sdk.sh"
   },
