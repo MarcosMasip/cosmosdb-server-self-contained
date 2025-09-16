@@ -1,17 +1,10 @@
-# cosmosdb-server
-
-A Cosmos DB server implementation for testing your apps locally. The minimum supported NodeJS version is 20.
-
-```js
-const { default: cosmosServer } = require("@vercel/cosmosdb-server");
-const { CosmosClient } = require("@azure/cosmos");
 # Cosmos DB Server (Self‑Contained + UI)
 
-This repository provides a fully local, Cosmos DB–compatible HTTP server for development and testing—now with an optional built‑in web UI. It remains compatible with the original API and CLI so existing usage still works, while adding a single‑terminal, one‑command flow to explore your data visually.
+Fully local, Cosmos DB–compatible HTTP server for development and testing—now with an optional built‑in web UI. It preserves the original API and CLI behavior, and adds a single‑terminal flow so you can run everything with one command.
 
-- Minimum Node.js version: 20+
-- Runs entirely on your machine. No Azure account and no external services required.
-- All data is in memory; restarting the server clears state (same as the original).
+- Node.js 20+ required (see `engines` in `package.json`)
+- No Azure account needed; runs entirely on your machine
+- In‑memory data store; restart clears state (just like the original)
 
 Table of contents
 - What is this and why fork it?
@@ -176,8 +169,14 @@ Options:
 - `--open`               Open the UI in your default browser at `/ui`
 
 NPM scripts (single-terminal convenience):
-- `npm start`       → HTTP, opens `/ui`
-- `npm run start:https` → HTTPS, opens `/ui` (expect self-signed cert warning)
+- `npm start`             → HTTP on port 3000, opens `/ui`
+- `npm run start:https`   → HTTPS on port 3000, opens `/ui` (expect self-signed cert warning)
+
+Tip: You can pass CLI flags through npm by adding them after `--`. For example, to change the port:
+```sh
+npm start -- -p 4000       # HTTP on port 4000
+npm run start:https -- -p 4443   # HTTPS on port 4443
+```
 
 ## Development & tests
 
@@ -206,11 +205,9 @@ Azure SDK integration tests (optional, heavy):
 ## License & acknowledgements
 
 - License: MIT (see `LICENSE.md`).
-- Based on the original work: vercel/cosmosdb-server. This fork adds an optional UI and quality‑of‑life CLI scripts while preserving API compatibility and original behavior.
-It may not support newly added features yet. Please report on the Github issue if you find one.
+- Based on the original work: vercel/cosmosdb-server. This fork adds an optional UI and quality‑of‑life CLI scripts while preserving API compatibility and original behavior. It may not support newly added features yet. Please open an issue if you find a mismatch.
 
 ## Developing
 
-To build the project, use `yarn build`.
-
-To run the server from development code, after building, use `node lib/cli.js`.
+- Build the project: `npm run build`
+- Run from compiled code: `node lib/cli.js -p 3000 --no-ssl --open`
